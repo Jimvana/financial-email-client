@@ -127,11 +127,23 @@ jQuery(document).ready(function($) {
             }, function(response) {
                 clearTimeout(loadingTimeout);
                 console.log('Received response:', response);
-                if (response.success) {
-                    displayEmails(response.data);
-                } else {
-                    console.error('Error loading emails:', response.data.message);
-                    $('#fec-email-list').html('<div class="fec-error">' + response.data.message + '</div>');
+                
+                try {
+                    if (response.success) {
+                        if (response.data && response.data.messages) {
+                            displayEmails(response.data);
+                        } else {
+                            console.error('Response data missing messages array');
+                            $('#fec-email-list').html('<div class="fec-error">Error: Invalid response format</div>');
+                        }
+                    } else {
+                        var errorMsg = response.data && response.data.message ? response.data.message : 'Unknown error';
+                        console.error('Error loading emails:', errorMsg);
+                        $('#fec-email-list').html('<div class="fec-error">' + errorMsg + '</div>');
+                    }
+                } catch (e) {
+                    console.error('Error processing response:', e);
+                    $('#fec-email-list').html('<div class="fec-error">Error processing response</div>');
                 }
             }).fail(function(jqXHR, textStatus, errorThrown) {
                 clearTimeout(loadingTimeout);
@@ -139,7 +151,7 @@ jQuery(document).ready(function($) {
                 $('#fec-email-list').html('<div class="fec-error">AJAX Error: ' + textStatus + '</div>');
             });
         }
-        
+            
         // Display emails in the list
         function displayEmails(data) {
             var html = '';
