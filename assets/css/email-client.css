@@ -1,0 +1,589 @@
+/**
+ * Financial Email Client Styles
+ */
+
+/* Main container */
+.fec-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Setup account form */
+.fec-setup-account {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 30px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.fec-setup-account h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+}
+
+/* Forms */
+.fec-form-group {
+    margin-bottom: 20px;
+}
+
+.fec-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.fec-form-group input[type="email"],
+.fec-form-group input[type="password"],
+.fec-form-group input[type="text"],
+.fec-form-group input[type="number"],
+.fec-form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.fec-help-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.fec-button {
+    display: inline-block;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.fec-button-primary {
+    background-color: #0073aa;
+    color: #fff;
+}
+
+.fec-button-primary:hover {
+    background-color: #005f8b;
+}
+
+.fec-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Messages */
+.fec-message {
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.fec-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.fec-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.fec-loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+/* Email client layout */
+.fec-email-client {
+    display: flex;
+    height: 600px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.fec-sidebar {
+    width: 220px;
+    background-color: #f5f5f5;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.fec-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Account info */
+.fec-account-info {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.fec-email-address {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    word-break: break-all;
+}
+
+.fec-add-account {
+    font-size: 12px;
+    color: #0073aa;
+    text-decoration: none;
+}
+
+/* Folders */
+.fec-folders,
+.fec-financial-folders ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.fec-folder,
+.fec-virtual-folder {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.fec-folder:hover,
+.fec-virtual-folder:hover {
+    background-color: #e9e9e9;
+}
+
+.fec-folder.active,
+.fec-virtual-folder.active {
+    background-color: #0073aa;
+    color: #fff;
+}
+
+.fec-financial-folders {
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+
+.fec-financial-folders h3 {
+    padding: 0 15px;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+/* Toolbar */
+.fec-toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    background-color: #f9f9f9;
+}
+
+.fec-search {
+    display: flex;
+    flex: 1;
+    max-width: 500px;
+}
+
+.fec-search input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+}
+
+.fec-search button {
+    padding: 8px 15px;
+    background-color: #0073aa;
+    color: #fff;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.fec-actions button {
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.fec-actions button:hover {
+    background-color: #e9e9e9;
+}
+
+/* Email list container */
+.fec-email-list-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.fec-email-list {
+    width: 40%;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.fec-email-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* Email list */
+.fec-email-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.fec-email-item:hover {
+    background-color: #f9f9f9;
+}
+
+.fec-email-item.selected {
+    background-color: #e6f3fa;
+}
+
+.fec-email-item.fec-unread .fec-email-sender,
+.fec-email-item.fec-unread .fec-email-subject {
+    font-weight: 700;
+}
+
+.fec-email-sender {
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.fec-email-subject {
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fec-email-preview {
+    color: #666;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fec-email-date {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 12px;
+    color: #666;
+}
+
+.fec-financial-indicator {
+    position: absolute;
+    top: 12px;
+    right: 70px;
+    color: #0ea432;
+    font-weight: bold;
+}
+
+.fec-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border-top: 1px solid #eee;
+}
+
+.fec-pagination button {
+    padding: 5px 10px;
+    margin: 0 5px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.fec-pagination button:hover {
+    background-color: #e9e9e9;
+}
+
+.fec-page-info {
+    margin: 0 10px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Email view */
+.fec-email-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.fec-email-subject {
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.fec-email-meta {
+    font-size: 13px;
+    color: #666;
+}
+
+.fec-email-meta > div {
+    margin-bottom: 5px;
+}
+
+.fec-label {
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.fec-email-body {
+    line-height: 1.6;
+}
+
+.fec-email-body img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Financial insights */
+.fec-financial-insights {
+    margin: 0 0 20px 0;
+    padding: 15px;
+    background-color: #f7fcff;
+    border: 1px solid #d0e8f9;
+    border-radius: 4px;
+}
+
+.fec-financial-insights h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #0073aa;
+}
+
+.fec-insight-item {
+    display: flex;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0f0fa;
+}
+
+.fec-insight-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.fec-insight-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    border-radius: 50%;
+    background-color: #0073aa;
+    position: relative;
+}
+
+.fec-insight-icon::after {
+    content: ';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.fec-insight-content {
+    flex: 1;
+}
+
+.fec-insight-content h4 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.fec-insight-amount {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0073aa;
+    margin-bottom: 5px;
+}
+
+.fec-insight-date,
+.fec-insight-percentage,
+.fec-insight-change {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+/* Insights by type */
+.fec-insight-bill_due .fec-insight-icon {
+    background-color: #0073aa;
+}
+
+.fec-insight-price_increase .fec-insight-icon {
+    background-color: #d63638;
+}
+
+.fec-insight-price_increase .fec-insight-icon::after {
+    content: '↑';
+}
+
+.fec-insight-subscription_renewal .fec-insight-icon {
+    background-color: #2271b1;
+}
+
+.fec-insight-subscription_renewal .fec-insight-icon::after {
+    content: '↻';
+}
+
+.fec-insight-payment_confirmation .fec-insight-icon {
+    background-color: #00a32a;
+}
+
+.fec-insight-payment_confirmation .fec-insight-icon::after {
+    content: '✓';
+}
+
+/* Attachments */
+.fec-email-attachments {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.fec-email-attachments h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.fec-attachment-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.fec-attachment-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: #eee;
+    border-radius: 3px;
+    position: relative;
+}
+
+.fec-attachment-icon::after {
+    content: '📎';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+}
+
+.fec-attachment-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.fec-attachment-size {
+    color: #666;
+    font-size: 12px;
+    margin: 0 10px;
+}
+
+.fec-download-attachment {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+    .fec-email-client {
+        height: 700px;
+    }
+    
+    .fec-email-list-container {
+        flex-direction: column;
+    }
+    
+    .fec-email-list {
+        width: 100%;
+        height: 350px;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .fec-email-view {
+        height: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .fec-email-client {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .fec-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .fec-content {
+        height: 600px;
+    }
+}
+
+@media (max-width: 576px) {
+    .fec-content {
+        height: 500px;
+    }
+    
+    .fec-toolbar {
+        flex-direction: column;
+    }
+    
+    .fec-search {
+        max-width: 100%;
+        margin-bottom: 10px;
+    }
+}
