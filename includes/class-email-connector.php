@@ -101,46 +101,55 @@ public function reconnect($account) {
      * @param string $provider Provider name
      * @return array|WP_Error Server settings or error
      */
-    private function get_provider_settings($provider) {
-        $settings = array();
-        
-        switch (strtolower($provider)) {
-            case 'gmail':
-                $settings = array(
-                    'mailbox' => '{imap.gmail.com:993/imap/ssl}',
-                    'smtp_host' => 'smtp.gmail.com',
-                    'smtp_port' => 465,
-                    'smtp_secure' => 'ssl'
-                );
-                break;
-                
-            case 'outlook':
-            case 'hotmail':
-            case 'live':
-                $settings = array(
-                    'mailbox' => '{outlook.office365.com:993/imap/ssl}',
-                    'smtp_host' => 'smtp.office365.com',
-                    'smtp_port' => 587,
-                    'smtp_secure' => 'tls'
-                );
-                break;
-                
-            case 'yahoo':
-                $settings = array(
-                    'mailbox' => '{imap.mail.yahoo.com:993/imap/ssl}',
-                    'smtp_host' => 'smtp.mail.yahoo.com',
-                    'smtp_port' => 465,
-                    'smtp_secure' => 'ssl'
-                );
-                break;
-                
-            default:
-                return new WP_Error('invalid_provider', __('Unsupported email provider.', 'financial-email-client'));
-        }
-        
-        return $settings;
+private function get_provider_settings($provider) {
+    $settings = array();
+    
+    switch (strtolower($provider)) {
+        case 'gmail':
+            $settings = array(
+                'mailbox' => '{imap.gmail.com:993/imap/ssl}INBOX',
+                'smtp_host' => 'smtp.gmail.com',
+                'smtp_port' => 465,
+                'smtp_secure' => 'ssl'
+            );
+            break;
+            
+        case 'outlook':
+        case 'hotmail':
+        case 'live':
+            $settings = array(
+                'mailbox' => '{outlook.office365.com:993/imap/ssl}INBOX',
+                'smtp_host' => 'smtp.office365.com',
+                'smtp_port' => 587,
+                'smtp_secure' => 'tls'
+            );
+            break;
+            
+        case 'yahoo':
+            $settings = array(
+                'mailbox' => '{imap.mail.yahoo.com:993/imap/ssl}INBOX',
+                'smtp_host' => 'smtp.mail.yahoo.com',
+                'smtp_port' => 465,
+                'smtp_secure' => 'ssl'
+            );
+            break;
+            
+        default:
+            return new WP_Error('invalid_provider', __('Unsupported email provider.', 'financial-email-client'));
     }
     
+    return $settings;
+}
+	
+/**
+ * Fetch emails from a specific folder
+ *
+ * @param resource $imap_stream IMAP connection
+ * @param string $folder Folder name
+ * @param int $page Page number
+ * @param int $per_page Emails per page
+ * @return array Emails and metadata
+ */
 /**
  * Fetch emails from a specific folder
  *
@@ -152,6 +161,9 @@ public function reconnect($account) {
  */
 public function fetch_emails($imap_stream, $folder = 'INBOX', $page = 1, $per_page = 10) {
     try {
+        // Log the start of the process
+        error_log('Starting to fetch emails from folder: ' . $folder);
+        
         // Select the folder
         if (!@imap_reopen($imap_stream, $folder)) {
             error_log('Failed to open folder: ' . $folder . ' - ' . imap_last_error());
@@ -165,12 +177,9 @@ public function fetch_emails($imap_stream, $folder = 'INBOX', $page = 1, $per_pa
             );
         }
         
-        // Calculate offset
-        $start = ($page - 1) * $per_page + 1;
-        
         // Get total number of emails
         $total_emails = imap_num_msg($imap_stream);
-        error_log('Total emails in folder: ' . $total_emails);
+        error_log('Total emails reported by IMAP: ' . $total_emails);
         
         // If no emails, return empty array
         if ($total_emails === 0) {
@@ -183,84 +192,94 @@ public function fetch_emails($imap_stream, $folder = 'INBOX', $page = 1, $per_pa
             );
         }
         
-        // Calculate end point (limit to most recent 50 for performance)
-        $end = min($start + $per_page - 1, $total_emails, $total_emails - 50);
-        $start = max($total_emails - 50, 1);
+        // Calculate pagination properly
+        $start = ($page - 1) * $per_page + 1;
+        $end = min($start + $per_page - 1, $total_emails);
         
-        // Get messages in reverse order (newest first)
+        // Convert to reverse order (newest first)
         $start_rev = max($total_emails - $end + 1, 1);
         $end_rev = $total_emails - $start + 1;
         
+        error_log("Calculated start: $start, end: $end");
+        error_log("Converted to reverse: start_rev: $start_rev, end_rev: $end_rev");
+        
+        // Initialize emails array
         $emails = array();
-        error_log('Fetching emails from ' . $start_rev . ' to ' . $end_rev);
         
         // Fetch emails
         for ($i = $end_rev; $i >= $start_rev; $i--) {
-            $header = @imap_headerinfo($imap_stream, $i);
-            
-            // Skip if no header
-            if (!$header) {
+            try {
+                $header = @imap_headerinfo($imap_stream, $i);
+                
+                // Skip if no header
+                if (!$header) {
+                    error_log("Failed to get header for message #$i: " . imap_last_error());
+                    continue;
+                }
+                
+                // Get email subject
+                $subject = '';
+                if (isset($header->subject)) {
+                    $subject = $this->decode_mime_str($header->subject);
+                }
+                
+                // Get sender
+                $from = '';
+                if (isset($header->from[0]->mailbox) && isset($header->from[0]->host)) {
+                    $from = $header->from[0]->mailbox . '@' . $header->from[0]->host;
+                }
+                
+                // Get sender name
+                $from_name = '';
+                if (isset($header->from[0]->personal)) {
+                    $from_name = $this->decode_mime_str($header->from[0]->personal);
+                }
+                
+                // Get date
+                $date = date('Y-m-d H:i:s', strtotime($header->date));
+                
+                // Check if email has attachments
+                $structure = @imap_fetchstructure($imap_stream, $i);
+                $has_attachments = $this->has_attachments($structure);
+                
+                // Get message size
+                $size = $header->Size;
+                
+                // Get message UID
+                $uid = imap_uid($imap_stream, $i);
+                
+                // Get message flags
+                $flags = array();
+                if (isset($header->Flagged) && $header->Flagged) {
+                    $flags[] = 'flagged';
+                }
+                if (isset($header->Answered) && $header->Answered) {
+                    $flags[] = 'answered';
+                }
+                if (isset($header->Seen) && $header->Seen) {
+                    $flags[] = 'seen';
+                }
+                
+                // Get preview (limit to reduce processing time)
+                $preview = substr($this->get_message_preview($imap_stream, $i), 0, 100);
+                
+                // Add email to array
+                $emails[] = array(
+                    'uid' => $uid,
+                    'subject' => $subject,
+                    'from' => $from,
+                    'from_name' => $from_name,
+                    'date' => $date,
+                    'has_attachments' => $has_attachments,
+                    'size' => $size,
+                    'flags' => $flags,
+                    'preview' => $preview
+                );
+                
+            } catch (Exception $e) {
+                error_log("Exception processing message #$i: " . $e->getMessage());
                 continue;
             }
-            
-            // Get email subject
-            $subject = '';
-            if (isset($header->subject)) {
-                $subject = $this->decode_mime_str($header->subject);
-            }
-            
-            // Get sender
-            $from = '';
-            if (isset($header->from[0]->mailbox) && isset($header->from[0]->host)) {
-                $from = $header->from[0]->mailbox . '@' . $header->from[0]->host;
-            }
-            
-            // Get sender name
-            $from_name = '';
-            if (isset($header->from[0]->personal)) {
-                $from_name = $this->decode_mime_str($header->from[0]->personal);
-            }
-            
-            // Get date
-            $date = date('Y-m-d H:i:s', strtotime($header->date));
-            
-            // Check if email has attachments
-            $structure = @imap_fetchstructure($imap_stream, $i);
-            $has_attachments = $this->has_attachments($structure);
-            
-            // Get message size
-            $size = $header->Size;
-            
-            // Get message UID
-            $uid = imap_uid($imap_stream, $i);
-            
-            // Get message flags
-            $flags = array();
-            if (isset($header->Flagged) && $header->Flagged) {
-                $flags[] = 'flagged';
-            }
-            if (isset($header->Answered) && $header->Answered) {
-                $flags[] = 'answered';
-            }
-            if (isset($header->Seen) && $header->Seen) {
-                $flags[] = 'seen';
-            }
-            
-            // Get preview (limit to reduce processing time)
-            $preview = substr($this->get_message_preview($imap_stream, $i), 0, 100);
-            
-            // Add email to array
-            $emails[] = array(
-                'uid' => $uid,
-                'subject' => $subject,
-                'from' => $from,
-                'from_name' => $from_name,
-                'date' => $date,
-                'has_attachments' => $has_attachments,
-                'size' => $size,
-                'flags' => $flags,
-                'preview' => $preview
-            );
         }
         
         return array(
@@ -270,6 +289,7 @@ public function fetch_emails($imap_stream, $folder = 'INBOX', $page = 1, $per_pa
             'per_page' => $per_page,
             'total_pages' => ceil($total_emails / $per_page)
         );
+        
     } catch (Exception $e) {
         error_log('Exception in fetch_emails: ' . $e->getMessage());
         return array(

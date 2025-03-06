@@ -85,6 +85,7 @@ class Financial_Email_Client {
         // AJAX handlers
         add_action('wp_ajax_connect_email_account', array($this, 'handle_email_connection'));
         add_action('wp_ajax_fetch_emails', array($this, 'fetch_user_emails'));
+		add_action('wp_ajax_fetch_email', array($this, 'fetch_single_email'));
         add_action('wp_ajax_analyze_email', array($this, 'analyze_email_content'));
     }
     
@@ -650,7 +651,45 @@ $emails['messages'][$key]['financial_data'] = $financial_data;
             wp_send_json_error(array('message' => 'Error: ' . $e->getMessage()));
         }
     }
+    /**
+ * Fetch a single email by UID
+ */
+public function fetch_single_email() {
+    // Verify nonce
+    check_ajax_referer('fec-ajax-nonce', 'nonce');
     
+    // Add error logging
+    error_log('AJAX fetch_email called with UID: ' . (isset($_POST['uid']) ? $_POST['uid'] : 'not set'));
+    
+    if (!isset($_POST['uid']) || empty($_POST['uid'])) {
+        error_log('AJAX fetch_email error: No UID provided');
+        wp_send_json_error(array('message' => __('No email ID provided.', 'financial-email-client')));
+        return;
+    }
+    
+    $user_id = get_current_user_id();
+    $email_id = sanitize_text_field($_POST['uid']);
+    
+    // Get email connector
+    $connector = new FEC_Email_Connector();
+    $email = $connector->get_email_by_id($user_id, $email_id);
+    
+    if (is_wp_error($email)) {
+        error_log('AJAX fetch_email error: ' . $email->get_error_message());
+        wp_send_json_error(array('message' => $email->get_error_message()));
+        return;
+    }
+    
+    // Add financial analysis if needed
+    $analyzer = new FEC_Financial_Analyzer();
+    $financial_data = $analyzer->analyze_email($email);
+    if ($financial_data) {
+        $email['financial_data'] = $financial_data;
+    }
+    
+    wp_send_json_success($email);
+}
+	
     /**
      * Analyze email content
      */

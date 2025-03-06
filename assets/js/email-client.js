@@ -207,15 +207,20 @@ jQuery(document).ready(function($) {
         }
         
         // Load an email by UID
-        function loadEmail(uid) {
-            $('#fec-email-view').html('<div class="fec-loading">' + fecAjax.loading_email_text + '</div>');
-            
-            $.post(fecAjax.ajax_url, {
-                action: 'fetch_email',
-                nonce: fecAjax.nonce,
-                uid: uid
-            }, function(response) {
-                if (response.success) {
+ function loadEmail(uid) {
+    $('#fec-email-view').html('<div class="fec-loading">' + fecAjax.loading_email_text + '</div>');
+    
+    // Debug info
+    console.log('Loading email with UID:', uid);
+    
+    $.post(fecAjax.ajax_url, {
+        action: 'fetch_email',
+        nonce: fecAjax.nonce,
+        uid: uid
+    }, function(response) {
+        console.log('Email fetch response:', response); // Log the response
+        
+        if (response.success) {
                     displayEmail(response.data);
                     
                     // Mark as read in UI
