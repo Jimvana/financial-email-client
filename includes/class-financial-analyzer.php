@@ -25,110 +25,7 @@ class FEC_Financial_Analyzer {
                 $this->debug_mode = true;
                 // Add debug action to log analysis results
                 add_action('fec_debug_log', array($this, 'log_debug_info'));
-                
-    /**
-     * Check for investment notifications
-     *
-     * @param array $email Email data
-     * @return array|false Investment insights or false if none found
-     */
-    private function check_investment_notifications($email) {
-        $insights = array();
-        $body = $email['body'];
-        $subject = $email['subject'];
-        
-        // Keywords that might indicate an investment notification
-        $investment_keywords = array(
-            'investment',
-            'portfolio',
-            'stock',
-            'fund',
-            'dividend',
-            'securities',
-            'trading',
-            'brokerage',
-            'market update',
-            'investment summary',
-            'quarterly statement',
-            'annual report',
-            'capital gain',
-            'ETF',
-            'mutual fund',
-            'retirement account',
-            '401k',
-            'IRA',
-            'performance',
-            'asset allocation'
-        );
-        
-        // Check if any investment keywords are in the subject or body
-        $is_investment_email = false;
-        foreach ($investment_keywords as $keyword) {
-            if (stripos($subject, $keyword) !== false || stripos($body, $keyword) !== false) {
-                $is_investment_email = true;
-                break;
             }
-        }
-        
-        if (!$is_investment_email) {
-            return false;
-        }
-        
-        // Look for performance indicators
-        $performance_change = null;
-        $performance_patterns = array(
-            '/(?:increased|decreased|up|down|gained|lost)\s+by\s+(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)/i',
-            '/(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)\s+(?:increase|decrease|gain|loss)/i',
-            '/(?:returned|return of)\s+(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)/i'
-        );
-        
-        foreach ($performance_patterns as $pattern) {
-            if (preg_match($pattern, $body, $matches)) {
-                $performance_change = floatval($matches[1]);
-                // Check for negative indicators
-                if (preg_match('/(?:decreased|down|lost|loss|negative)/i', $body, $neg_matches)) {
-                    $performance_change = -$performance_change;
-                }
-                break;
-            }
-        }
-        
-        // Look for total value
-        $total_value = $this->extract_amount($body);
-        
-        // Look for statement date patterns
-        $statement_date = null;
-        $date_patterns = array(
-            '/(?:statement|report|as of)\s+(?:date|period)?\s*:?\s*
-            (\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/ix',
-            '/(?:statement|report|as of)\s+(?:date|period)?\s*:?\s*
-            ([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,\s*\d{4})/ix'
-        );
-        
-        foreach ($date_patterns as $pattern) {
-            if (preg_match($pattern, $body, $matches)) {
-                $statement_date = date('Y-m-d', strtotime($matches[1]));
-                break;
-            }
-        }
-        
-        if ($performance_change !== null || $total_value) {
-            $insights[] = array(
-                'type' => 'investment_update',
-                'description' => 'Investment portfolio update',
-                'performance_change' => $performance_change,
-                'total_value' => $total_value,
-                'statement_date' => $statement_date,
-                'source' => array(
-                    'email_subject' => $subject,
-                    'from' => $email['from']
-                )
-            );
-        }
-        
-        return $insights;
-    }
-}
         }
     }
     
@@ -484,6 +381,107 @@ class FEC_Financial_Analyzer {
                 'description' => 'Payment confirmation',
                 'amount' => $amount,
                 'payment_date' => $payment_date,
+                'source' => array(
+                    'email_subject' => $subject,
+                    'from' => $email['from']
+                )
+            );
+        }
+        
+        return $insights;
+    }
+    
+    /**
+     * Check for investment notifications
+     *
+     * @param array $email Email data
+     * @return array|false Investment insights or false if none found
+     */
+    private function check_investment_notifications($email) {
+        $insights = array();
+        $body = $email['body'];
+        $subject = $email['subject'];
+        
+        // Keywords that might indicate an investment notification
+        $investment_keywords = array(
+            'investment',
+            'portfolio',
+            'stock',
+            'fund',
+            'dividend',
+            'securities',
+            'trading',
+            'brokerage',
+            'market update',
+            'investment summary',
+            'quarterly statement',
+            'annual report',
+            'capital gain',
+            'ETF',
+            'mutual fund',
+            'retirement account',
+            '401k',
+            'IRA',
+            'performance',
+            'asset allocation'
+        );
+        
+        // Check if any investment keywords are in the subject or body
+        $is_investment_email = false;
+        foreach ($investment_keywords as $keyword) {
+            if (stripos($subject, $keyword) !== false || stripos($body, $keyword) !== false) {
+                $is_investment_email = true;
+                break;
+            }
+        }
+        
+        if (!$is_investment_email) {
+            return false;
+        }
+        
+        // Look for performance indicators
+        $performance_change = null;
+        $performance_patterns = array(
+            '/(?:increased|decreased|up|down|gained|lost)\s+by\s+(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)/i',
+            '/(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)\s+(?:increase|decrease|gain|loss)/i',
+            '/(?:returned|return of)\s+(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)/i'
+        );
+        
+        foreach ($performance_patterns as $pattern) {
+            if (preg_match($pattern, $body, $matches)) {
+                $performance_change = floatval($matches[1]);
+                // Check for negative indicators
+                if (preg_match('/(?:decreased|down|lost|loss|negative)/i', $body, $neg_matches)) {
+                    $performance_change = -$performance_change;
+                }
+                break;
+            }
+        }
+        
+        // Look for total value
+        $total_value = $this->extract_amount($body);
+        
+        // Look for statement date patterns
+        $statement_date = null;
+        $date_patterns = array(
+            '/(?:statement|report|as of)\s+(?:date|period)?\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/i',
+            '/(?:statement|report|as of)\s+(?:date|period)?\s*:?\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,\s*\d{4})/i'
+        );
+        
+        foreach ($date_patterns as $pattern) {
+            if (preg_match($pattern, $body, $matches)) {
+                $statement_date = date('Y-m-d', strtotime($matches[1]));
+                break;
+            }
+        }
+        
+        if ($performance_change !== null || $total_value) {
+            $insights[] = array(
+                'type' => 'investment_update',
+                'description' => 'Investment portfolio update',
+                'performance_change' => $performance_change,
+                'total_value' => $total_value,
+                'statement_date' => $statement_date,
                 'source' => array(
                     'email_subject' => $subject,
                     'from' => $email['from']

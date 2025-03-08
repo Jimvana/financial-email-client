@@ -192,7 +192,19 @@ class FEC_Data_Exporter {
         $filepath = $upload_dir['path'] . '/' . $filename;
         
         // Save PDF to file
-        $pdf->Output($filepath, 'F');
+        // Check if we can write to the directory
+        $upload_dir_writable = wp_is_writable($upload_dir['path']);
+        if (!$upload_dir_writable) {
+            // Try to create the directory
+            wp_mkdir_p($upload_dir['path']);
+        }
+        
+        try {
+            $pdf->Output($filepath, 'F');
+        } catch (Exception $e) {
+            error_log('PDF Export Error: ' . $e->getMessage());
+            return false;
+        }
         
         // Return file path if successful
         if (file_exists($filepath)) {
@@ -330,8 +342,24 @@ class FEC_Data_Exporter {
                 $upload_dir = wp_upload_dir();
                 $filepath = $upload_dir['path'] . '/' . $filename;
                 
-                // Save CSV to file
-                file_put_contents($filepath, $csv_content);
+                // Check if we can write to the directory
+                $upload_dir_writable = wp_is_writable($upload_dir['path']);
+                if (!$upload_dir_writable) {
+                    // Try to create the directory
+                    wp_mkdir_p($upload_dir['path']);
+                }
+                
+                // Save CSV to file with error handling
+                try {
+                    if (file_put_contents($filepath, $csv_content) === false) {
+                        wp_send_json_error(array('message' => __('Failed to write CSV file.', 'financial-email-client')));
+                        return;
+                    }
+                } catch (Exception $e) {
+                    error_log('CSV Export Error: ' . $e->getMessage());
+                    wp_send_json_error(array('message' => __('Error creating CSV file.', 'financial-email-client')));
+                    return;
+                }
                 
                 wp_send_json_success(array(
                     'message' => __('CSV export successful.', 'financial-email-client'),
@@ -366,8 +394,24 @@ class FEC_Data_Exporter {
                 $upload_dir = wp_upload_dir();
                 $filepath = $upload_dir['path'] . '/' . $filename;
                 
-                // Save JSON to file
-                file_put_contents($filepath, $json_content);
+                // Check if we can write to the directory
+                $upload_dir_writable = wp_is_writable($upload_dir['path']);
+                if (!$upload_dir_writable) {
+                    // Try to create the directory
+                    wp_mkdir_p($upload_dir['path']);
+                }
+                
+                // Save JSON to file with error handling
+                try {
+                    if (file_put_contents($filepath, $json_content) === false) {
+                        wp_send_json_error(array('message' => __('Failed to write JSON file.', 'financial-email-client')));
+                        return;
+                    }
+                } catch (Exception $e) {
+                    error_log('JSON Export Error: ' . $e->getMessage());
+                    wp_send_json_error(array('message' => __('Error creating JSON file.', 'financial-email-client')));
+                    return;
+                }
                 
                 wp_send_json_success(array(
                     'message' => __('JSON export successful.', 'financial-email-client'),
