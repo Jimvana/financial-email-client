@@ -53,6 +53,7 @@ class Financial_Email_Client {
         require_once FEC_PLUGIN_DIR . 'includes/class-email-connector.php';
         require_once FEC_PLUGIN_DIR . 'includes/class-email-parser.php';
         require_once FEC_PLUGIN_DIR . 'includes/class-financial-analyzer.php';
+        require_once FEC_PLUGIN_DIR . 'includes/class-data-exporter.php';
         
         // Admin functionality
         if (is_admin()) {
@@ -87,6 +88,7 @@ class Financial_Email_Client {
         add_action('wp_ajax_fetch_emails', array($this, 'fetch_user_emails'));
 		add_action('wp_ajax_fetch_email', array($this, 'fetch_single_email'));
         add_action('wp_ajax_analyze_email', array($this, 'analyze_email_content'));
+        add_action('wp_ajax_export_insights', array($this, 'handle_export_insights'));
     }
     
     /**
@@ -747,6 +749,17 @@ public function fetch_single_email() {
                 )
             );
         }
+    }
+    
+    /**
+     * Handle export insights request
+     */
+    public function handle_export_insights() {
+        // Initialize data exporter
+        $exporter = new FEC_Data_Exporter();
+        
+        // Let the exporter handle the rest of the process
+        $exporter->handle_export_request();
     }
 }
 

@@ -4,6 +4,149 @@
  * Analyzes email content for financial information
  */
 class FEC_Financial_Analyzer {
+    /**
+     * Debug mode
+     *
+     * @var boolean
+     */
+    private $debug_mode = false;
+
+    /**
+     * Constructor
+     */
+    public function __construct() {
+        // Check if debug mode is enabled via query parameter
+        if (isset($_GET['fec_debug']) && $_GET['fec_debug'] == 1 && isset($_GET['key'])) {
+            // Verify secret key for security
+            $debug_key = $_GET['key'];
+            $stored_key = get_option('fec_debug_key', '');
+            
+            if (!empty($stored_key) && $debug_key === $stored_key) {
+                $this->debug_mode = true;
+                // Add debug action to log analysis results
+                add_action('fec_debug_log', array($this, 'log_debug_info'));
+                
+    /**
+     * Check for investment notifications
+     *
+     * @param array $email Email data
+     * @return array|false Investment insights or false if none found
+     */
+    private function check_investment_notifications($email) {
+        $insights = array();
+        $body = $email['body'];
+        $subject = $email['subject'];
+        
+        // Keywords that might indicate an investment notification
+        $investment_keywords = array(
+            'investment',
+            'portfolio',
+            'stock',
+            'fund',
+            'dividend',
+            'securities',
+            'trading',
+            'brokerage',
+            'market update',
+            'investment summary',
+            'quarterly statement',
+            'annual report',
+            'capital gain',
+            'ETF',
+            'mutual fund',
+            'retirement account',
+            '401k',
+            'IRA',
+            'performance',
+            'asset allocation'
+        );
+        
+        // Check if any investment keywords are in the subject or body
+        $is_investment_email = false;
+        foreach ($investment_keywords as $keyword) {
+            if (stripos($subject, $keyword) !== false || stripos($body, $keyword) !== false) {
+                $is_investment_email = true;
+                break;
+            }
+        }
+        
+        if (!$is_investment_email) {
+            return false;
+        }
+        
+        // Look for performance indicators
+        $performance_change = null;
+        $performance_patterns = array(
+            '/(?:increased|decreased|up|down|gained|lost)\s+by\s+(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)/i',
+            '/(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)\s+(?:increase|decrease|gain|loss)/i',
+            '/(?:returned|return of)\s+(\d+(?:\.\d+)?)(?:\s*)?(?:%|percent)/i'
+        );
+        
+        foreach ($performance_patterns as $pattern) {
+            if (preg_match($pattern, $body, $matches)) {
+                $performance_change = floatval($matches[1]);
+                // Check for negative indicators
+                if (preg_match('/(?:decreased|down|lost|loss|negative)/i', $body, $neg_matches)) {
+                    $performance_change = -$performance_change;
+                }
+                break;
+            }
+        }
+        
+        // Look for total value
+        $total_value = $this->extract_amount($body);
+        
+        // Look for statement date patterns
+        $statement_date = null;
+        $date_patterns = array(
+            '/(?:statement|report|as of)\s+(?:date|period)?\s*:?\s*
+            (\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/ix',
+            '/(?:statement|report|as of)\s+(?:date|period)?\s*:?\s*
+            ([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,\s*\d{4})/ix'
+        );
+        
+        foreach ($date_patterns as $pattern) {
+            if (preg_match($pattern, $body, $matches)) {
+                $statement_date = date('Y-m-d', strtotime($matches[1]));
+                break;
+            }
+        }
+        
+        if ($performance_change !== null || $total_value) {
+            $insights[] = array(
+                'type' => 'investment_update',
+                'description' => 'Investment portfolio update',
+                'performance_change' => $performance_change,
+                'total_value' => $total_value,
+                'statement_date' => $statement_date,
+                'source' => array(
+                    'email_subject' => $subject,
+                    'from' => $email['from']
+                )
+            );
+        }
+        
+        return $insights;
+    }
+}
+        }
+    }
+    
+    /**
+     * Log debug information
+     *
+     * @param mixed $data Data to log
+     */
+    public function log_debug_info($data) {
+        if (!$this->debug_mode) {
+            return;
+        }
+        
+        $log_file = WP_CONTENT_DIR . '/fec-debug.log';
+        $log_data = date('Y-m-d H:i:s') . ' - ' . print_r($data, true) . "\n";
+        
+        file_put_contents($log_file, $log_data, FILE_APPEND);
+    }
     
     /**
      * Analyze email for financial information
@@ -13,6 +156,16 @@ class FEC_Financial_Analyzer {
      */
     public function analyze_email($email) {
         $insights = array();
+        
+        // Log the start of analysis if in debug mode
+        if ($this->debug_mode) {
+            do_action('fec_debug_log', array(
+                'action' => 'analyze_start',
+                'email_subject' => $email['subject'],
+                'from' => $email['from'],
+                'timestamp' => current_time('timestamp')
+            ));
+        }
         
         // Check for bill due dates
         $bill_insights = $this->check_bill_due_dates($email);
@@ -36,6 +189,23 @@ class FEC_Financial_Analyzer {
         $payment_insights = $this->check_payment_confirmations($email);
         if ($payment_insights) {
             $insights = array_merge($insights, $payment_insights);
+        }
+        
+        // Check for investment notifications
+        $investment_insights = $this->check_investment_notifications($email);
+        if ($investment_insights) {
+            $insights = array_merge($insights, $investment_insights);
+        }
+        
+        // Log the insights found if in debug mode
+        if ($this->debug_mode) {
+            do_action('fec_debug_log', array(
+                'action' => 'analyze_complete',
+                'email_subject' => $email['subject'],
+                'insights_count' => count($insights),
+                'insights' => $insights,
+                'timestamp' => current_time('timestamp')
+            ));
         }
         
         // Return insights if any found, otherwise false
@@ -67,7 +237,19 @@ class FEC_Financial_Analyzer {
             'gas bill',
             'water bill',
             'phone bill',
-            'credit card statement'
+            'credit card statement',
+            'monthly statement',
+            'payment reminder',
+            'account summary',
+            'balance due',
+            'minimum payment',
+            'payment required',
+            'mortgage payment',
+            'loan payment',
+            'internet bill',
+            'cable bill',
+            'subscription fee',
+            'membership fee'
         );
         
         // Check if any bill keywords are in the subject or body

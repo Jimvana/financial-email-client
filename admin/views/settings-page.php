@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) {
         <a href="?page=financial-email-settings&tab=general" class="nav-tab <?php echo !isset($_GET['tab']) || $_GET['tab'] === 'general' ? 'nav-tab-active' : ''; ?>"><?php _e('General Settings', 'financial-email-client'); ?></a>
         <a href="?page=financial-email-settings&tab=accounts" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] === 'accounts' ? 'nav-tab-active' : ''; ?>"><?php _e('Email Accounts', 'financial-email-client'); ?></a>
         <a href="?page=financial-email-settings&tab=analysis" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] === 'analysis' ? 'nav-tab-active' : ''; ?>"><?php _e('Analysis Settings', 'financial-email-client'); ?></a>
+        <a href="?page=financial-email-settings&tab=export" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] === 'export' ? 'nav-tab-active' : ''; ?>"><?php _e('Export Data', 'financial-email-client'); ?></a>
     </h2>
     
     <div class="tab-content">
@@ -74,6 +75,8 @@ if (!defined('ABSPATH')) {
                             <option value="gmail"><?php _e('Gmail', 'financial-email-client'); ?></option>
                             <option value="outlook"><?php _e('Outlook / Hotmail', 'financial-email-client'); ?></option>
                             <option value="yahoo"><?php _e('Yahoo', 'financial-email-client'); ?></option>
+                            <option value="protonmail"><?php _e('ProtonMail (Bridge)', 'financial-email-client'); ?></option>
+                            <option value="zoho"><?php _e('Zoho Mail', 'financial-email-client'); ?></option>
                             <option value="other"><?php _e('Other IMAP', 'financial-email-client'); ?></option>
                         </select>
                     </div>
@@ -187,7 +190,8 @@ if (!defined('ABSPATH')) {
                         'price_increase' => __('Price Increases', 'financial-email-client'),
                         'bill_due' => __('Bills & Due Dates', 'financial-email-client'),
                         'subscription' => __('Subscription Renewals', 'financial-email-client'),
-                        'payment_confirmation' => __('Payment Confirmations', 'financial-email-client')
+                        'payment_confirmation' => __('Payment Confirmations', 'financial-email-client'),
+                        'investment_update' => __('Investment Updates', 'financial-email-client')
                     );
                     ?>
                     
@@ -215,6 +219,102 @@ if (!defined('ABSPATH')) {
                     
                     <?php submit_button(); ?>
                 </form>
+                <?php
+                break;
+                
+            case 'export':
+                // Export Data Tab Content
+                ?>
+                <h3><?php _e('Export Financial Insights', 'financial-email-client'); ?></h3>
+                <p><?php _e('Export your financial insights data in various formats:', 'financial-email-client'); ?></p>
+                
+                <form id="fec-export-form" class="fec-form">
+                    <div class="fec-form-group">
+                        <label for="fec-export-format"><?php _e('Export Format', 'financial-email-client'); ?></label>
+                        <select id="fec-export-format" name="format" required>
+                            <option value="csv"><?php _e('CSV (.csv)', 'financial-email-client'); ?></option>
+                            <option value="pdf"><?php _e('PDF (.pdf)', 'financial-email-client'); ?></option>
+                            <option value="json"><?php _e('JSON (.json)', 'financial-email-client'); ?></option>
+                        </select>
+                    </div>
+                    
+                    <div class="fec-form-group">
+                        <label for="fec-export-type"><?php _e('Insight Type', 'financial-email-client'); ?></label>
+                        <select id="fec-export-type" name="type">
+                            <option value=""><?php _e('All Types', 'financial-email-client'); ?></option>
+                            <option value="bill_due"><?php _e('Bills & Due Dates', 'financial-email-client'); ?></option>
+                            <option value="price_increase"><?php _e('Price Increases', 'financial-email-client'); ?></option>
+                            <option value="subscription_renewal"><?php _e('Subscription Renewals', 'financial-email-client'); ?></option>
+                            <option value="payment_confirmation"><?php _e('Payment Confirmations', 'financial-email-client'); ?></option>
+                            <option value="investment_update"><?php _e('Investment Updates', 'financial-email-client'); ?></option>
+                        </select>
+                    </div>
+                    
+                    <div class="fec-form-group">
+                        <label for="fec-export-date-from"><?php _e('Date From', 'financial-email-client'); ?></label>
+                        <input type="date" id="fec-export-date-from" name="date_from">
+                    </div>
+                    
+                    <div class="fec-form-group">
+                        <label for="fec-export-date-to"><?php _e('Date To', 'financial-email-client'); ?></label>
+                        <input type="date" id="fec-export-date-to" name="date_to">
+                    </div>
+                    
+                    <div class="fec-form-group">
+                        <label for="fec-export-status"><?php _e('Status', 'financial-email-client'); ?></label>
+                        <select id="fec-export-status" name="status">
+                            <option value=""><?php _e('All Statuses', 'financial-email-client'); ?></option>
+                            <option value="new"><?php _e('New', 'financial-email-client'); ?></option>
+                            <option value="pending"><?php _e('Pending', 'financial-email-client'); ?></option>
+                            <option value="paid"><?php _e('Paid', 'financial-email-client'); ?></option>
+                            <option value="overdue"><?php _e('Overdue', 'financial-email-client'); ?></option>
+                        </select>
+                    </div>
+                    
+                    <div class="fec-form-group">
+                        <button type="submit" class="button button-primary"><?php _e('Export Data', 'financial-email-client'); ?></button>
+                    </div>
+                    
+                    <div id="fec-export-message" class="fec-message" style="display: none;"></div>
+                </form>
+                
+                <script>
+                jQuery(document).ready(function($) {
+                    // Handle form submission
+                    $('#fec-export-form').on('submit', function(e) {
+                        e.preventDefault();
+                        
+                        var form = $(this);
+                        var messageContainer = $('#fec-export-message');
+                        
+                        // Clear any previous messages
+                        messageContainer.removeClass('notice-error notice-success').hide();
+                        
+                        // Disable submit button
+                        form.find('button[type="submit"]').prop('disabled', true).text('<?php _e('Processing...', 'financial-email-client'); ?>');
+                        
+                        // Collect form data
+                        var formData = form.serialize();
+                        formData += '&action=export_insights&nonce=<?php echo wp_create_nonce("fec-ajax-nonce"); ?>';
+                        
+                        // Send AJAX request
+                        $.post(ajaxurl, formData, function(response) {
+                            if (response.success) {
+                                messageContainer.addClass('notice notice-success').html(
+                                    response.data.message + '<br><a href="' + response.data.download_url + '" class="button button-secondary" download><?php _e("Download File", "financial-email-client"); ?></a>'
+                                ).show();
+                            } else {
+                                messageContainer.addClass('notice notice-error').text(response.data.message).show();
+                            }
+                        }).fail(function() {
+                            messageContainer.addClass('notice notice-error').text('<?php _e("Export failed. Please try again.", "financial-email-client"); ?>').show();
+                        }).always(function() {
+                            // Re-enable submit button
+                            form.find('button[type="submit"]').prop('disabled', false).text('<?php _e("Export Data", "financial-email-client"); ?>');
+                        });
+                    });
+                });
+                </script>
                 <?php
                 break;
                 

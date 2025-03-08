@@ -55,9 +55,9 @@ class FEC_Email_Connector {
  */
 public function reconnect($account) {
     // Set a timeout for IMAP connections
-    imap_timeout(IMAP_OPENTIMEOUT, 5);
-    imap_timeout(IMAP_READTIMEOUT, 5);
-    imap_timeout(IMAP_WRITETIMEOUT, 5);
+    imap_timeout(IMAP_OPENTIMEOUT, 10);
+    imap_timeout(IMAP_READTIMEOUT, 10);
+    imap_timeout(IMAP_WRITETIMEOUT, 10);
     imap_timeout(IMAP_CLOSETIMEOUT, 5);
     
     // Decrypt connection details
@@ -76,15 +76,45 @@ public function reconnect($account) {
     error_log('Attempting to connect to: ' . $server_settings['server_settings']['mailbox']);
     error_log('Using email: ' . $server_settings['email']);
     
-    // Try to establish connection
-    $imap_stream = @imap_open(
-        $server_settings['server_settings']['mailbox'],
-        $server_settings['email'],
-        $server_settings['password'],
-        OP_READONLY,
-        1,
-        array('DISABLE_AUTHENTICATOR' => 'GSSAPI')
-    );
+    // Check if provider requires ProtonMail Bridge
+    $requires_bridge = isset($server_settings['server_settings']['requires_bridge']) && $server_settings['server_settings']['requires_bridge'];
+    
+    // Add debug message
+    error_log('Connection settings: ' . json_encode($server_settings['server_settings']));
+    
+    // Try to establish connection with additional error handling
+    $retry_count = 0;
+    $max_retries = 3;
+    $imap_stream = false;
+    
+    while (!$imap_stream && $retry_count < $max_retries) {
+        // Clear any existing errors
+        imap_errors();
+        
+        $imap_stream = @imap_open(
+            $server_settings['server_settings']['mailbox'],
+            $server_settings['email'],
+            $server_settings['password'],
+            OP_READONLY,
+            1,
+            array('DISABLE_AUTHENTICATOR' => 'GSSAPI')
+        );
+        
+        if (!$imap_stream) {
+            $retry_count++;
+            $error = imap_last_error();
+            error_log("IMAP connection attempt $retry_count failed: $error");
+            
+            if ($requires_bridge && strpos($error, 'Connection refused') !== false) {
+                return new WP_Error('bridge_not_running', __('ProtonMail Bridge does not appear to be running. Please start the Bridge application.', 'financial-email-client'));
+            }
+            
+            // Wait before retrying
+            if ($retry_count < $max_retries) {
+                sleep(2);
+            }
+        }
+    }
     
     if (!$imap_stream) {
         $error = imap_last_error();
@@ -134,6 +164,25 @@ private function get_provider_settings($provider) {
             );
             break;
             
+        case 'protonmail':
+            $settings = array(
+                'mailbox' => '{127.0.0.1:1143/imap/novalidate-cert}INBOX',
+                'smtp_host' => '127.0.0.1',
+                'smtp_port' => 1025,
+                'smtp_secure' => 'tls',
+                'requires_bridge' => true
+            );
+            break;
+            
+        case 'zoho':
+            $settings = array(
+                'mailbox' => '{imap.zoho.com:993/imap/ssl}INBOX',
+                'smtp_host' => 'smtp.zoho.com',
+                'smtp_port' => 465,
+                'smtp_secure' => 'ssl'
+            );
+            break;
+        
         default:
             return new WP_Error('invalid_provider', __('Unsupported email provider.', 'financial-email-client'));
     }
